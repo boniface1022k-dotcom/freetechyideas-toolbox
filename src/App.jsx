@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { prompts } from "./data/prompts";
-import { tips } from "./data/tips";
+import { prompts } from "./data/prompts.js";
+import { tips } from "./data/tips.js";
 import { affiliateLinks } from "./data/links.js";
 
 function NumberInput({ placeholder, value, setValue }) {
