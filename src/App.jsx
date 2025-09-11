@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { prompts } from "./data/prompts";
 import { tips } from "./data/tips";
 import { affiliateLinks } from "./data/links";
+import { affiliateLinks } from "./data/links.js";
 
 function NumberInput({ placeholder, value, setValue }) {
   return (
