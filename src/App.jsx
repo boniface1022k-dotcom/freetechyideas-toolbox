@@ -1,12 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { prompts } from "./data/prompts";
 import { tips } from "./data/tips";
 import { affiliateLinks } from "./data/links";
-
-/**
- * FreeTechyIdeas Toolbox - full Marketing Toolkit (6 calculators)
- * Copy this file to src/App.jsx and redeploy.
- */
 
 function NumberInput({ placeholder, value, setValue }) {
   return (
@@ -22,58 +17,59 @@ function NumberInput({ placeholder, value, setValue }) {
 }
 
 export default function App() {
-  // Prompt + Tips (kept simple)
+  // --------------------
+  // Random Prompt & Tips
+  // --------------------
   const [selectedPrompt, setSelectedPrompt] = useState("");
   const [randomTip, setRandomTip] = useState("");
 
-  // ROI
-  const [roiInvestment, setRoiInvestment] = useState("");
-  const [roiRevenue, setRoiRevenue] = useState("");
-  const [roiResult, setRoiResult] = useState(null);
+  const handleRandomPrompt = () => {
+    setSelectedPrompt(prompts[Math.floor(Math.random() * prompts.length)]);
+  };
+  const handleRandomTip = () => {
+    setRandomTip(tips[Math.floor(Math.random() * tips.length)]);
+  };
 
-  // CPC
-  const [cpcSpend, setCpcSpend] = useState("");
-  const [cpcClicks, setCpcClicks] = useState("");
-  const [cpcResult, setCpcResult] = useState(null);
+  // --------------------
+  // Link click counter (with localStorage persistence)
+  // --------------------
+  const [clickCounts, setClickCounts] = useState({});
 
-  // Conversion Rate
-  const [crVisitors, setCrVisitors] = useState("");
-  const [crConversions, setCrConversions] = useState("");
-  const [crResult, setCrResult] = useState(null);
+  useEffect(() => {
+    const saved = localStorage.getItem("clickCounts");
+    if (saved) {
+      setClickCounts(JSON.parse(saved));
+    }
+  }, []);
 
-  // CPA
-  const [cpaSpend, setCpaSpend] = useState("");
-  const [cpaCustomers, setCpaCustomers] = useState("");
-  const [cpaResult, setCpaResult] = useState(null);
+  useEffect(() => {
+    localStorage.setItem("clickCounts", JSON.stringify(clickCounts));
+  }, [clickCounts]);
 
-  // CLV
-  const [clvAvgOrder, setClvAvgOrder] = useState("");
-  const [clvFreq, setClvFreq] = useState("");
-  const [clvYears, setClvYears] = useState("");
-  const [clvResult, setClvResult] = useState(null);
+  const trackClick = (toolName) => {
+    setClickCounts((prev) => ({
+      ...prev,
+      [toolName]: (prev[toolName] || 0) + 1,
+    }));
+  };
 
-  // Break-even
-  const [beFixedCosts, setBeFixedCosts] = useState("");
-  const [bePrice, setBePrice] = useState("");
-  const [beVariable, setBeVariable] = useState("");
-  const [beResult, setBeResult] = useState(null);
+  // --------------------
+  // Calculator helpers
+  // --------------------
+  const fmt = (n) =>
+    typeof n === "number"
+      ? n.toLocaleString(undefined, { maximumFractionDigits: 2 })
+      : n;
 
-  // Helpers
   const safeNum = (v) => {
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : null;
   };
 
-  // Actions
-  const handleRandomPrompt = () => {
-    if (!prompts || prompts.length === 0) return;
-    setSelectedPrompt(prompts[Math.floor(Math.random() * prompts.length)]);
-  };
-  const handleRandomTip = () => {
-    if (!tips || tips.length === 0) return;
-    setRandomTip(tips[Math.floor(Math.random() * tips.length)]);
-  };
-
+  // ROI
+  const [roiInvestment, setRoiInvestment] = useState("");
+  const [roiRevenue, setRoiRevenue] = useState("");
+  const [roiResult, setRoiResult] = useState(null);
   const calcROI = () => {
     const invest = safeNum(roiInvestment);
     const rev = safeNum(roiRevenue);
@@ -85,259 +81,369 @@ export default function App() {
     setRoiResult({ value: roi });
   };
 
+  // CPC
+  const [cpcSpend, setCpcSpend] = useState("");
+  const [cpcClicks, setCpcClicks] = useState("");
+  const [cpcResult, setCpcResult] = useState(null);
   const calcCPC = () => {
     const spend = safeNum(cpcSpend);
     const clicks = safeNum(cpcClicks);
     if (spend === null || clicks === null || clicks <= 0) {
-      setCpcResult({ error: "Enter valid ad spend and clicks (>0)." });
+      setCpcResult({ error: "Enter valid spend and clicks." });
       return;
     }
     setCpcResult({ value: spend / clicks });
   };
 
-  const calcCR = () => {
-    const visitors = safeNum(crVisitors);
-    const conversions = safeNum(crConversions);
-    if (visitors === null || visitors <= 0 || conversions === null) {
-      setCrResult({ error: "Enter valid visitors (>0) and conversions." });
+  // Conversion Rate
+  const [convVisitors, setConvVisitors] = useState("");
+  const [convConversions, setConvConversions] = useState("");
+  const [convResult, setConvResult] = useState(null);
+  const calcConversion = () => {
+    const visitors = safeNum(convVisitors);
+    const conv = safeNum(convConversions);
+    if (visitors === null || visitors <= 0 || conv === null) {
+      setConvResult({ error: "Enter valid visitors and conversions." });
       return;
     }
-    setCrResult({ value: (conversions / visitors) * 100 });
+    setConvResult({ value: (conv / visitors) * 100 });
   };
 
+  // CPA
+  const [cpaSpend, setCpaSpend] = useState("");
+  const [cpaCustomers, setCpaCustomers] = useState("");
+  const [cpaResult, setCpaResult] = useState(null);
   const calcCPA = () => {
     const spend = safeNum(cpaSpend);
-    const customers = safeNum(cpaCustomers);
-    if (spend === null || customers === null || customers <= 0) {
-      setCpaResult({ error: "Enter valid ad spend and number of customers (>0)." });
+    const cust = safeNum(cpaCustomers);
+    if (spend === null || cust === null || cust <= 0) {
+      setCpaResult({ error: "Enter valid spend and customers." });
       return;
     }
-    setCpaResult({ value: spend / customers });
+    setCpaResult({ value: spend / cust });
   };
 
+  // CLV
+  const [clvValue, setClvValue] = useState("");
+  const [clvFreq, setClvFreq] = useState("");
+  const [clvLife, setClvLife] = useState("");
+  const [clvResult, setClvResult] = useState(null);
   const calcCLV = () => {
-    const avg = safeNum(clvAvgOrder);
+    const val = safeNum(clvValue);
     const freq = safeNum(clvFreq);
-    const years = safeNum(clvYears);
-    if (avg === null || freq === null || years === null) {
-      setClvResult({ error: "Enter valid average order, frequency, and years." });
+    const life = safeNum(clvLife);
+    if (val === null || freq === null || life === null) {
+      setClvResult({ error: "Enter valid numbers." });
       return;
     }
-    setClvResult({ value: avg * freq * years });
+    setClvResult({ value: val * freq * life });
   };
 
+  // Break-even
+  const [beFixed, setBeFixed] = useState("");
+  const [bePrice, setBePrice] = useState("");
+  const [beVar, setBeVar] = useState("");
+  const [beResult, setBeResult] = useState(null);
   const calcBreakEven = () => {
-    const fixed = safeNum(beFixedCosts);
+    const fixed = safeNum(beFixed);
     const price = safeNum(bePrice);
-    const variable = safeNum(beVariable);
-    if (fixed === null || price === null || variable === null || price <= variable) {
-      setBeResult({ error: "Ensure fixed cost, price, and variable cost are valid, and price > variable cost." });
+    const variable = safeNum(beVar);
+    if (fixed === null || price === null || variable === null) {
+      setBeResult({ error: "Enter valid costs and price." });
       return;
     }
-    setBeResult({ value: Math.ceil(fixed / (price - variable)) }); // units
+    const margin = price - variable;
+    if (margin <= 0) {
+      setBeResult({ error: "Selling price must exceed variable cost." });
+      return;
+    }
+    setBeResult({ value: fixed / margin });
   };
 
-  // Small UI helper for showing numbers
-  const fmt = (n) => (typeof n === "number" ? n.toLocaleString(undefined, { maximumFractionDigits: 2 }) : n);
-
+  // --------------------
+  // Render
+  // --------------------
   return (
     <div className="min-h-screen p-6 bg-slate-50">
       <div className="max-w-4xl mx-auto space-y-6">
         <header className="text-center">
-          <h1 className="text-3xl font-bold text-purple-700">FreeTechyIdeas Toolbox</h1>
-          <p className="text-sm text-gray-600 mt-2">Practical calculators & free tools to help you learn and earn.</p>
+          <h1 className="text-3xl font-bold text-purple-700">
+            FreeTechyIdeas Toolbox
+          </h1>
+          <p className="text-sm text-gray-600 mt-2">
+            Practical calculators & free tools to help you learn and earn.
+          </p>
         </header>
 
-        {/* --- Prompts --- */}
+        {/* Prompts */}
         <section className="bg-white rounded-xl shadow p-4">
           <h2 className="font-semibold text-lg">✍️ AI Prompt Generator</h2>
-          <p className="text-sm text-gray-600 mb-3">Click to get a ready prompt you can use in ChatGPT or other AI tools.</p>
-          <div className="flex gap-2">
-            <button onClick={handleRandomPrompt} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Get Prompt</button>
-            <button onClick={() => { navigator.clipboard.writeText(selectedPrompt || ""); alert("Copied!"); }} className="px-3 py-2 border rounded-lg">Copy</button>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={handleRandomPrompt}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg"
+            >
+              Get Prompt
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(selectedPrompt || "");
+                alert("Copied!");
+              }}
+              className="px-3 py-2 border rounded-lg"
+            >
+              Copy
+            </button>
           </div>
-          {selectedPrompt && <div className="mt-3 p-3 bg-slate-50 rounded">{selectedPrompt}</div>}
+          {selectedPrompt && (
+            <div className="mt-3 p-3 bg-slate-50 rounded">{selectedPrompt}</div>
+          )}
         </section>
 
-        {/* --- Marketing Toolkit (all calculators) --- */}
-        <section className="bg-white rounded-xl shadow p-4 space-y-6">
-          <h2 className="font-semibold text-lg">📊 Marketing Toolkit</h2>
-          <p className="text-sm text-gray-600">Six practical calculators — enter values, click calculate, get results & tips.</p>
-
-          {/* ROI */}
-          <div className="border rounded p-3">
-            <h3 className="font-medium">ROI Calculator</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-              <NumberInput placeholder="Investment (e.g., 500)" value={roiInvestment} setValue={setRoiInvestment} />
-              <NumberInput placeholder="Revenue (e.g., 1200)" value={roiRevenue} setValue={setRoiRevenue} />
-              <div className="flex gap-2">
-                <button onClick={calcROI} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Calculate</button>
-                <button onClick={() => { setRoiInvestment(""); setRoiRevenue(""); setRoiResult(null); }} className="px-3 py-2 border rounded-lg">Clear</button>
-              </div>
-            </div>
-            <div className="mt-3">
-              {roiResult && roiResult.error && <div className="text-sm text-red-600">{roiResult.error}</div>}
-              {roiResult && roiResult.value !== undefined && (
-                <div>
-                  <strong>ROI:</strong> {fmt(roiResult.value)}%
-                  <p className="text-sm text-gray-700 mt-2">
-                    💡 Pro Tip: Find high-value keywords to increase revenue using <a href={affiliateLinks.seoTool.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">{affiliateLinks.seoTool.name}</a>.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CPC */}
-          <div className="border rounded p-3">
-            <h3 className="font-medium">CPC Calculator (Cost Per Click)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-              <NumberInput placeholder="Total Ad Spend (e.g., 500)" value={cpcSpend} setValue={setCpcSpend} />
-              <NumberInput placeholder="Number of Clicks (e.g., 2000)" value={cpcClicks} setValue={setCpcClicks} />
-              <div className="flex gap-2">
-                <button onClick={calcCPC} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Calculate</button>
-                <button onClick={() => { setCpcSpend(""); setCpcClicks(""); setCpcResult(null); }} className="px-3 py-2 border rounded-lg">Clear</button>
-              </div>
-            </div>
-            <div className="mt-3">
-              {cpcResult && cpcResult.error && <div className="text-sm text-red-600">{cpcResult.error}</div>}
-              {cpcResult && cpcResult.value !== undefined && (
-                <div>
-                  <strong>CPC:</strong> ${fmt(cpcResult.value)}
-                  <p className="text-sm text-gray-700 mt-2">
-                    💡 Pro Tip: If CPC is high, test ad creatives or try keyword targeting tools like <a href={affiliateLinks.seoTool.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">{affiliateLinks.seoTool.name}</a>.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Conversion Rate */}
-          <div className="border rounded p-3">
-            <h3 className="font-medium">Conversion Rate Calculator</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-              <NumberInput placeholder="Visitors (e.g., 2000)" value={crVisitors} setValue={setCrVisitors} />
-              <NumberInput placeholder="Conversions (e.g., 150)" value={crConversions} setValue={setCrConversions} />
-              <div className="flex gap-2">
-                <button onClick={calcCR} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Calculate</button>
-                <button onClick={() => { setCrVisitors(""); setCrConversions(""); setCrResult(null); }} className="px-3 py-2 border rounded-lg">Clear</button>
-              </div>
-            </div>
-            <div className="mt-3">
-              {crResult && crResult.error && <div className="text-sm text-red-600">{crResult.error}</div>}
-              {crResult && crResult.value !== undefined && (
-                <div>
-                  <strong>Conversion Rate:</strong> {fmt(crResult.value)}%
-                  <p className="text-sm text-gray-700 mt-2">
-                    💡 Pro Tip: Improve conversion with simple landing pages — try recommended builders in the Recommended Tools section below.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CPA */}
-          <div className="border rounded p-3">
-            <h3 className="font-medium">CPA Calculator (Cost Per Acquisition)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-              <NumberInput placeholder="Total Ad Spend (e.g., 1000)" value={cpaSpend} setValue={setCpaSpend} />
-              <NumberInput placeholder="Number of Customers (e.g., 50)" value={cpaCustomers} setValue={setCpaCustomers} />
-              <div className="flex gap-2">
-                <button onClick={calcCPA} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Calculate</button>
-                <button onClick={() => { setCpaSpend(""); setCpaCustomers(""); setCpaResult(null); }} className="px-3 py-2 border rounded-lg">Clear</button>
-              </div>
-            </div>
-            <div className="mt-3">
-              {cpaResult && cpaResult.error && <div className="text-sm text-red-600">{cpaResult.error}</div>}
-              {cpaResult && cpaResult.value !== undefined && (
-                <div>
-                  <strong>CPA:</strong> ${fmt(cpaResult.value)}
-                  <p className="text-sm text-gray-700 mt-2">
-                    💡 Pro Tip: Lower CPA by improving ad targeting or funnels — analytics tools like <a href={affiliateLinks.seoTool.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">{affiliateLinks.seoTool.name}</a> help diagnose leaks.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CLV */}
-          <div className="border rounded p-3">
-            <h3 className="font-medium">CLV Calculator (Customer Lifetime Value)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
-              <NumberInput placeholder="Avg Order Value (e.g., 50)" value={clvAvgOrder} setValue={setClvAvgOrder} />
-              <NumberInput placeholder="Purchases/year (e.g., 5)" value={clvFreq} setValue={setClvFreq} />
-              <NumberInput placeholder="Customer lifespan (years) (e.g., 3)" value={clvYears} setValue={setClvYears} />
-              <div className="flex gap-2">
-                <button onClick={calcCLV} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Calculate</button>
-                <button onClick={() => { setClvAvgOrder(""); setClvFreq(""); setClvYears(""); setClvResult(null); }} className="px-3 py-2 border rounded-lg">Clear</button>
-              </div>
-            </div>
-            <div className="mt-3">
-              {clvResult && clvResult.error && <div className="text-sm text-red-600">{clvResult.error}</div>}
-              {clvResult && clvResult.value !== undefined && (
-                <div>
-                  <strong>CLV:</strong> ${fmt(clvResult.value)}
-                  <p className="text-sm text-gray-700 mt-2">
-                    💡 Pro Tip: Increase CLV with email automation — consider <a href={affiliateLinks.emailTool.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">{affiliateLinks.emailTool.name}</a>.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Break-even */}
-          <div className="border rounded p-3">
-            <h3 className="font-medium">Break-even Calculator (units)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
-              <NumberInput placeholder="Fixed Costs (e.g., 10000)" value={beFixedCosts} setValue={setBeFixedCosts} />
-              <NumberInput placeholder="Price per unit (e.g., 50)" value={bePrice} setValue={setBePrice} />
-              <NumberInput placeholder="Variable cost per unit (e.g., 30)" value={beVariable} setValue={setBeVariable} />
-              <div className="flex gap-2">
-                <button onClick={calcBreakEven} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Calculate</button>
-                <button onClick={() => { setBeFixedCosts(""); setBePrice(""); setBeVariable(""); setBeResult(null); }} className="px-3 py-2 border rounded-lg">Clear</button>
-              </div>
-            </div>
-            <div className="mt-3">
-              {beResult && beResult.error && <div className="text-sm text-red-600">{beResult.error}</div>}
-              {beResult && beResult.value !== undefined && (
-                <div>
-                  <strong>Break-even Units:</strong> {fmt(beResult.value)} units
-                  <p className="text-sm text-gray-700 mt-2">
-                    💡 Pro Tip: If you need hosting for an e-commerce store, consider <a href={affiliateLinks.hosting.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">{affiliateLinks.hosting.name}</a>.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* --- Tips --- */}
+        {/* Tips */}
         <section className="bg-white rounded-xl shadow p-4">
-          <h2 className="font-semibold text-lg">💡 Tech Tips Randomizer</h2>
-          <p className="text-sm text-gray-600 mb-3">Click to get a practical quick tip.</p>
-          <div className="flex gap-2">
-            <button onClick={handleRandomTip} className="px-3 py-2 bg-purple-600 text-white rounded-lg">Get Tip</button>
-            <button onClick={() => navigator.clipboard.writeText(randomTip || "")} className="px-3 py-2 border rounded-lg">Copy</button>
-          </div>
-          {randomTip && <div className="mt-3 p-3 bg-slate-50 rounded">{randomTip}</div>}
+          <h2 className="font-semibold text-lg">💡 Marketing Tips</h2>
+          <button
+            onClick={handleRandomTip}
+            className="px-3 py-2 mt-2 bg-purple-600 text-white rounded-lg"
+          >
+            Get Random Tip
+          </button>
+          {randomTip && (
+            <div className="mt-3 p-3 bg-slate-50 rounded">{randomTip}</div>
+          )}
         </section>
 
-        {/* --- Recommended Tools --- */}
+        {/* ROI */}
+        <section className="bg-white rounded-xl shadow p-4">
+          <h2 className="font-semibold text-lg">📊 ROI Calculator</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+            <NumberInput
+              placeholder="Investment"
+              value={roiInvestment}
+              setValue={setRoiInvestment}
+            />
+            <NumberInput
+              placeholder="Revenue"
+              value={roiRevenue}
+              setValue={setRoiRevenue}
+            />
+            <button
+              onClick={calcROI}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg"
+            >
+              Calculate
+            </button>
+          </div>
+          {roiResult?.error && (
+            <p className="text-sm text-red-600 mt-3">{roiResult.error}</p>
+          )}
+          {roiResult?.value !== undefined && (
+            <p className="mt-3">
+              <strong>ROI:</strong> {fmt(roiResult.value)}%
+            </p>
+          )}
+        </section>
+
+        {/* CPC */}
+        <section className="bg-white rounded-xl shadow p-4">
+          <h2 className="font-semibold text-lg">💰 CPC Calculator</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+            <NumberInput
+              placeholder="Ad Spend"
+              value={cpcSpend}
+              setValue={setCpcSpend}
+            />
+            <NumberInput
+              placeholder="Clicks"
+              value={cpcClicks}
+              setValue={setCpcClicks}
+            />
+            <button
+              onClick={calcCPC}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg"
+            >
+              Calculate
+            </button>
+          </div>
+          {cpcResult?.error && (
+            <p className="text-sm text-red-600 mt-3">{cpcResult.error}</p>
+          )}
+          {cpcResult?.value !== undefined && (
+            <p className="mt-3">
+              <strong>CPC:</strong> ${fmt(cpcResult.value)}
+            </p>
+          )}
+        </section>
+
+        {/* Conversion Rate */}
+        <section className="bg-white rounded-xl shadow p-4">
+          <h2 className="font-semibold text-lg">📈 Conversion Rate Calculator</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+            <NumberInput
+              placeholder="Visitors"
+              value={convVisitors}
+              setValue={setConvVisitors}
+            />
+            <NumberInput
+              placeholder="Conversions"
+              value={convConversions}
+              setValue={setConvConversions}
+            />
+            <button
+              onClick={calcConversion}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg"
+            >
+              Calculate
+            </button>
+          </div>
+          {convResult?.error && (
+            <p className="text-sm text-red-600 mt-3">{convResult.error}</p>
+          )}
+          {convResult?.value !== undefined && (
+            <p className="mt-3">
+              <strong>Conversion Rate:</strong> {fmt(convResult.value)}%
+            </p>
+          )}
+        </section>
+
+        {/* CPA */}
+        <section className="bg-white rounded-xl shadow p-4">
+          <h2 className="font-semibold text-lg">📉 CPA Calculator</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+            <NumberInput
+              placeholder="Ad Spend"
+              value={cpaSpend}
+              setValue={setCpaSpend}
+            />
+            <NumberInput
+              placeholder="Customers Acquired"
+              value={cpaCustomers}
+              setValue={setCpaCustomers}
+            />
+            <button
+              onClick={calcCPA}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg"
+            >
+              Calculate
+            </button>
+          </div>
+          {cpaResult?.error && (
+            <p className="text-sm text-red-600 mt-3">{cpaResult.error}</p>
+          )}
+          {cpaResult?.value !== undefined && (
+            <p className="mt-3">
+              <strong>CPA:</strong> ${fmt(cpaResult.value)}
+            </p>
+          )}
+        </section>
+
+        {/* CLV */}
+        <section className="bg-white rounded-xl shadow p-4">
+          <h2 className="font-semibold text-lg">💎 CLV Calculator</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+            <NumberInput
+              placeholder="Avg Purchase Value"
+              value={clvValue}
+              setValue={setClvValue}
+            />
+            <NumberInput
+              placeholder="Purchase Frequency"
+              value={clvFreq}
+              setValue={setClvFreq}
+            />
+            <NumberInput
+              placeholder="Customer Lifespan (yrs)"
+              value={clvLife}
+              setValue={setClvLife}
+            />
+            <button
+              onClick={calcCLV}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg"
+            >
+              Calculate
+            </button>
+          </div>
+          {clvResult?.error && (
+            <p className="text-sm text-red-600 mt-3">{clvResult.error}</p>
+          )}
+          {clvResult?.value !== undefined && (
+            <p className="mt-3">
+              <strong>CLV:</strong> ${fmt(clvResult.value)}
+            </p>
+          )}
+        </section>
+
+        {/* Break-even */}
+        <section className="bg-white rounded-xl shadow p-4">
+          <h2 className="font-semibold text-lg">⚖️ Break-even Calculator</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mt-2">
+            <NumberInput
+              placeholder="Fixed Costs"
+              value={beFixed}
+              setValue={setBeFixed}
+            />
+            <NumberInput
+              placeholder="Selling Price"
+              value={bePrice}
+              setValue={setBePrice}
+            />
+            <NumberInput
+              placeholder="Variable Costs"
+              value={beVar}
+              setValue={setBeVar}
+            />
+            <button
+              onClick={calcBreakEven}
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg"
+            >
+              Calculate
+            </button>
+          </div>
+          {beResult?.error && (
+            <p className="text-sm text-red-600 mt-3">{beResult.error}</p>
+          )}
+          {beResult?.value !== undefined && (
+            <p className="mt-3">
+              <strong>Break-even Units:</strong> {fmt(beResult.value)}
+            </p>
+          )}
+        </section>
+
+        {/* Recommended Tools */}
         <section className="bg-purple-50 rounded-xl p-4">
           <h3 className="font-semibold">🔥 Recommended Tools</h3>
-          <p className="text-sm text-gray-700 mb-3">Helpful tools (affiliate links). Replace IDs in data/links.js with yours.</p>
+          <p className="text-sm text-gray-700 mb-3">
+            Helpful tools (affiliate links). Replace IDs in data/links.js with
+            yours.
+          </p>
           <div className="grid md:grid-cols-2 gap-3">
-            {Object.values(affiliateLinks).map((t, i) => (
-              <a key={i} href={t.url} target="_blank" rel="noreferrer" className="block p-3 bg-white rounded shadow hover:shadow-md">
-                <strong className="text-blue-700">{t.name}</strong>
-                <div className="text-sm text-gray-600">{t.description}</div>
+            {Object.values(affiliateLinks).map((tool, i) => (
+              <a
+                key={i}
+                href={tool.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => trackClick(tool.name)}
+                className="block p-3 bg-white rounded shadow hover:shadow-md"
+              >
+                <strong className="text-blue-700">
+                  {tool.name}{" "}
+                  <span className="text-xs text-gray-500">
+                    ({clickCounts[tool.name] || 0} clicks)
+                  </span>
+                </strong>
+                <div className="text-sm text-gray-600">{tool.description}</div>
               </a>
             ))}
           </div>
         </section>
 
         <footer className="text-center text-xs text-gray-500 mt-6">
-          <div>Disclaimer: Some links may be affiliate links. We may earn a small commission at no extra cost to you.</div>
+          <div>
+            Disclaimer: Some links may be affiliate links. We may earn a small
+            commission at no extra cost to you.
+          </div>
         </footer>
       </div>
     </div>
