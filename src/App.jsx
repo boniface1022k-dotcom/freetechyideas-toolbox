@@ -414,8 +414,7 @@ export default function App() {
         <section className="bg-purple-50 rounded-xl p-4">
           <h3 className="font-semibold">🔥 Recommended Tools</h3>
           <p className="text-sm text-gray-700 mb-3">
-            Helpful tools (affiliate links). Replace IDs in data/links.js with
-            yours.
+            Helpful tools (affiliate links). Replace IDs in data/links.js with yours.
           </p>
           <div className="grid md:grid-cols-2 gap-3">
             {affiliateLinks.map((tool, i) => (
