@@ -418,7 +418,7 @@ export default function App() {
             yours.
           </p>
           <div className="grid md:grid-cols-2 gap-3">
-            {Object.values(affiliateLinks).map((tool, i) => (
+            {affiliateLinks.map((tool, i) => (
               <a
                 key={i}
                 href={tool.url}
